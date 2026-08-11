@@ -33,8 +33,16 @@ if (projectList) {
   const filterBar = document.createElement('div');
   filterBar.className = 'project-filters';
   filterBar.setAttribute('aria-label', 'Filter projects');
-  const filters = ['All', ...new Set(rows.map((row) => row.querySelector('.project-type')?.textContent.trim()).filter(Boolean))];
-  filters.forEach((label, index) => {
+
+  const categoryMap = {
+    'All': () => true,
+    'Agentic AI': (type) => /Agentic AI/i.test(type),
+    'Machine Learning': (type) => /Machine Learning|Deep Learning|Computer Vision|Forecasting/i.test(type),
+    'NLP': (type) => /NLP/i.test(type),
+    'AI & Algorithms': (type) => /AI Algorithms|Data Structures|Algorithms/i.test(type)
+  };
+
+  Object.keys(categoryMap).forEach((label, index) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = `filter-button${index === 0 ? ' is-active' : ''}`;
@@ -43,16 +51,21 @@ if (projectList) {
     button.setAttribute('aria-pressed', String(index === 0));
     filterBar.appendChild(button);
   });
+
   projectList.before(filterBar);
   filterBar.addEventListener('click', (event) => {
     const button = event.target.closest('button');
     if (!button) return;
+    const predicate = categoryMap[button.dataset.filter] ?? categoryMap.All;
     filterBar.querySelectorAll('button').forEach((item) => {
       const active = item === button;
       item.classList.toggle('is-active', active);
       item.setAttribute('aria-pressed', String(active));
     });
-    rows.forEach((row) => { row.hidden = button.dataset.filter !== 'All' && row.querySelector('.project-type')?.textContent.trim() !== button.dataset.filter; });
+    rows.forEach((row) => {
+      const type = row.querySelector('.project-type')?.textContent.trim() ?? '';
+      row.hidden = !predicate(type);
+    });
   });
 }
 
